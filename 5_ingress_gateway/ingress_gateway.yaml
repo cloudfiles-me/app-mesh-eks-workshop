@@ -1,0 +1,168 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    mesh: dj-app
+    gateway: ingress-gw
+    appmesh.k8s.aws/sidecarInjectorWebhook: enabled
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualGateway
+metadata:
+  name: ingress-gw
+  namespace: prod
+spec:
+  namespaceSelector:
+    matchLabels:
+      gateway: ingress-gw
+  podSelector:
+    matchLabels:
+      app: ingress-gw
+  listeners:
+    - portMapping:
+        port: 8088
+        protocol: http
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-default
+  namespace: prod
+spec:
+  httpRoute:
+    match:
+      prefix: "/"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: dj
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-jazz
+  namespace: prod
+spec:
+  httpRoute:
+    match:
+      prefix: "/jazz"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: jazz
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: GatewayRoute
+metadata:
+  name: gateway-route-metal
+  namespace: prod
+spec:
+  httpRoute:
+    match:
+      prefix: "/metal"
+    action:
+      target:
+        virtualService:
+          virtualServiceRef:
+            name: metal
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  awsName: dj-svc.prod.svc.cluster.local
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: dj
+    # virtualRouter:
+    #   virtualRouterRef:
+    #     name: dj-router
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  name: dj-router
+  namespace: prod
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: dj-route-root
+      httpRoute:
+        match:
+          prefix: "/"
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: dj
+              weight: 100
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: dj
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/ping"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: dj.prod.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-gw
+  namespace: prod
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8088
+      name: http
+  selector:
+    app: ingress-gw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-gw
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingress-gw
+  template:
+    metadata:
+      labels:
+        app: ingress-gw
+    spec:
+      containers:
+        - name: envoy
+          image: 840364872350.dkr.ecr.us-west-2.amazonaws.com/aws-appmesh-envoy:v1.12.5.0-prod
+          ports:
+            - containerPort: 8088

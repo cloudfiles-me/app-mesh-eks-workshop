@@ -1,0 +1,134 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dj
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: dj
+        version: v1
+    spec:
+      containers:
+        - name: dj
+          image: "jorgehrn/dj-app:v0.2"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9080
+          # env:
+          #   - name: "HW_RESPONSE"
+          #     value: "DJ Reporting for duty!"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-v1
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metal
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: metal
+        version: v1
+    spec:
+      containers:
+        - name: metal
+          image: "jorgehrn/metal-app:v0.2"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9080
+          env:
+            - name: "BANDS"
+              value: '["Megadeth","Judas Priest"]'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jazz-v1
+  namespace: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jazz
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: jazz
+        version: v1
+    spec:
+      containers:
+        - name: jazz
+          image: "jorgehrn/jazz-app:v0.2"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9080
+          env:
+            - name: "BANDS"
+              value: '["Astrud Gilberto","Miles Davis"]'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dj
+  namespace: prod
+  labels:
+    app: dj
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: dj
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-v1
+  namespace: prod
+  labels:
+    app: metal
+    version: v1
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: metal
+    version: v1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jazz-v1
+  namespace: prod
+  labels:
+    app: jazz
+    version: v1
+spec:
+  ports:
+    - port: 9080
+      name: http
+  selector:
+    app: jazz
+    version: v1
+---
+

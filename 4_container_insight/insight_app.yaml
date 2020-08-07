@@ -1,0 +1,95 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: jazz-v2
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: jazz
+      version: v2
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/ping"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: jazz-v2.prod.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: metal-v2
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: metal
+      version: v2
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/ping"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  serviceDiscovery:
+    dns:
+      hostname: metal-v2.prod.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: dj
+  listeners:
+    - portMapping:
+        port: 8080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/ping"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: jazz
+    - virtualService:
+        virtualServiceRef:
+          name: metal
+  serviceDiscovery:
+    dns:
+      hostname: dj.prod.svc.cluster.local
+  logging:
+    accessLog:
+      file:
+        path: /dev/stdout
+---
+

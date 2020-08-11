@@ -48,12 +48,12 @@ metadata:
 spec:
   awsName: dj-svc.prod.svc.cluster.local
   provider:
-    # virtualNode:
-    #   virtualNodeRef:
-    #     name: dj
-    virtualRouter:
-      virtualRouterRef:
-        name: dj-router
+    virtualNode:
+      virtualNodeRef:
+        name: dj
+    # virtualRouter:
+    #   virtualRouterRef:
+    #     name: dj-router
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
@@ -73,60 +73,28 @@ spec:
         action:
           weightedTargets:
             - virtualNodeRef:
-                name: dj-ingress
+                name: dj
               weight: 100
----
-apiVersion: appmesh.k8s.aws/v1beta2
-kind: VirtualNode
-metadata:
-  name: dj-ingress
-  namespace: prod
-spec:
-  podSelector:
-    matchLabels:
-      app: dj
-      version: ingress
-  listeners:
-    - portMapping:
-        port: 9080
-        protocol: http
-      healthCheck:
-        protocol: http
-        path: "/ping"
-        healthyThreshold: 2
-        unhealthyThreshold: 2
-        timeoutMillis: 2000
-        intervalMillis: 5000
-  backends:
-    - virtualService:
-        virtualServiceRef:
-          name: jazz
-    - virtualService:
-        virtualServiceRef:
-          name: metal
-  serviceDiscovery:
-    dns:
-      hostname: dj-ingress.prod.svc.cluster.local
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dj-ingress
+  name: dj
   namespace: prod
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: dj
-      version: ingress
+      version: v1
   template:
     metadata:
       labels:
         app: dj
-        version: ingress
+        version: v1
     spec:
       containers:
-        - name: dj-ingress
+        - name: dj
           image: "jorgehrn/dj-app:ingress"
           imagePullPolicy: Always
           ports:
@@ -142,19 +110,6 @@ spec:
                 configMapKeyRef:
                   name: dj-app
                   key: metal_svc_addr
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: dj-ingress
-  namespace: prod
-  labels:
-    app: dj
-    version: ingress
-spec:
-  ports:
-    - port: 9080
-      name: http
 ---
 apiVersion: v1
 kind: ConfigMap

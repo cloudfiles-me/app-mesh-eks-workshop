@@ -48,12 +48,12 @@ metadata:
 spec:
   awsName: dj-svc.prod.svc.cluster.local
   provider:
-    virtualNode:
-      virtualNodeRef:
-        name: dj
-    # virtualRouter:
-    #   virtualRouterRef:
-    #     name: dj-router
+    # virtualNode:
+    #   virtualNodeRef:
+    #     name: dj
+    virtualRouter:
+      virtualRouterRef:
+        name: dj-router
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualRouter
@@ -76,6 +76,38 @@ spec:
                 name: dj
               weight: 100
 ---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: dj
+  namespace: prod
+spec:
+  podSelector:
+    matchLabels:
+      app: dj
+      version: ingress
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+      healthCheck:
+        protocol: http
+        path: "/ping"
+        healthyThreshold: 2
+        unhealthyThreshold: 2
+        timeoutMillis: 2000
+        intervalMillis: 5000
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: jazz
+    - virtualService:
+        virtualServiceRef:
+          name: metal
+  serviceDiscovery:
+    dns:
+      hostname: dj.prod.svc.cluster.local
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -86,12 +118,12 @@ spec:
   selector:
     matchLabels:
       app: dj
-      version: v1
+      version: ingress
   template:
     metadata:
       labels:
         app: dj
-        version: v1
+        version: ingress
     spec:
       containers:
         - name: dj

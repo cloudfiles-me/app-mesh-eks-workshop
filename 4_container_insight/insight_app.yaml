@@ -66,9 +66,10 @@ spec:
   podSelector:
     matchLabels:
       app: dj
+      version: v1
   listeners:
     - portMapping:
-        port: 8080
+        port: 9080
         protocol: http
       healthCheck:
         protocol: http

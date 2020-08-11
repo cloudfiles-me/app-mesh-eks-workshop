@@ -116,7 +116,7 @@ spec:
     spec:
       containers:
         - name: jazz
-          image: "jorgehrn/jazz-app:v0.1"
+          image: "jorgehrn/jazz-app:v0.2"
           ports:
             - containerPort: 9080
           env:
@@ -142,7 +142,7 @@ spec:
     spec:
       containers:
         - name: metal
-          image: "jorgehrn/metal-app:v0.1"
+          image: "jorgehrn/metal-app:v0.2"
           ports:
             - containerPort: 9080
           env:

@@ -73,13 +73,13 @@ spec:
         action:
           weightedTargets:
             - virtualNodeRef:
-                name: dj
+                name: dj-ingress
               weight: 100
 ---
 apiVersion: appmesh.k8s.aws/v1beta2
 kind: VirtualNode
 metadata:
-  name: dj
+  name: dj-ingress
   namespace: prod
 spec:
   podSelector:
@@ -106,12 +106,12 @@ spec:
           name: metal
   serviceDiscovery:
     dns:
-      hostname: dj.prod.svc.cluster.local
+      hostname: dj-ingress.prod.svc.cluster.local
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dj
+  name: dj-ingress
   namespace: prod
 spec:
   replicas: 1
@@ -126,7 +126,7 @@ spec:
         version: ingress
     spec:
       containers:
-        - name: dj
+        - name: dj-ingress
           image: "jorgehrn/dj-app:ingress"
           imagePullPolicy: Always
           ports:
@@ -142,6 +142,19 @@ spec:
                 configMapKeyRef:
                   name: dj-app
                   key: metal_svc_addr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dj-ingress
+  namespace: prod
+  labels:
+    app: dj
+    version: ingress
+spec:
+  ports:
+    - port: 9080
+      name: http
 ---
 apiVersion: v1
 kind: ConfigMap

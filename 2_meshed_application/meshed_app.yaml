@@ -25,6 +25,7 @@ spec:
   podSelector:
     matchLabels:
       app: dj
+      version: v1
   listeners:
     - portMapping:
         port: 9080
